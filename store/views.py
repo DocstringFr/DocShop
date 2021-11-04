@@ -1,7 +1,6 @@
 import stripe
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
-from django.views.decorators.csrf import csrf_exempt
 
 from shop import settings
 from store.models import Product, Cart, Order
@@ -43,17 +42,14 @@ def cart(request):
     return render(request, 'store/cart.html', context={"orders": cart.orders.all()})
 
 
-@csrf_exempt
 def create_checkout_session(request):
+    cart = request.user.cart
+    line_items = [{"price": order.product.stripe_id,
+                   "quantity": order.quantity} for order in cart.orders.all()]
+
     session = stripe.checkout.Session.create(
             payment_method_types=['card'],
-            line_items=[{
-                'price': 'price_1JrtMhJ9SXnXquYKYhwlyLE6',
-                'quantity': 1,
-            },
-                {'price': 'price_1JruYrJ9SXnXquYKdn5bR3S9',
-                 'quantity': 2}
-            ],
+            line_items=line_items,
             mode='payment',
             locale='fr',
             success_url="http://127.0.0.1:8000/",
