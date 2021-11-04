@@ -1,5 +1,6 @@
 .idea
 env/
+.env
 db.sqlite3
 media/
 .DS_Store
