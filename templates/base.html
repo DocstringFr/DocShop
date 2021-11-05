@@ -18,7 +18,7 @@
     <a href="{% url 'signup' %}">S'inscrire</a>
 {% endif %}
 
-{% if user.cart %}
+{% if user.cart and not user.cart.ordered %}
 <p>
     <a href="{% url 'cart' %}">Voir le panier ({{ user.cart.orders.count }})</a>
 </p>
