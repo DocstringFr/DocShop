@@ -4,15 +4,6 @@ from django.urls import reverse
 
 from shop.settings import AUTH_USER_MODEL
 
-"""
-Product
-- Nom
-- Prix
-- La quantité en stock
-- Description
-- Image
-"""
-
 
 class Product(models.Model):
     name = models.CharField(max_length=128)
@@ -29,7 +20,6 @@ class Product(models.Model):
         return reverse("product", kwargs={"slug": self.slug})
 
 
-
 class Order(models.Model):
     user = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -38,8 +28,6 @@ class Order(models.Model):
 
     def __str__(self):
         return f"{self.product.name} ({self.quantity})"
-
-
 
 
 class Cart(models.Model):
