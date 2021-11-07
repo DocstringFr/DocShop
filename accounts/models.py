@@ -30,6 +30,7 @@ class CustomUserManager(BaseUserManager):
 class Shopper(AbstractUser):
     username = None
     email = models.EmailField(max_length=240, unique=True)
+    stripe_id = models.CharField(max_length=90, blank=True)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []

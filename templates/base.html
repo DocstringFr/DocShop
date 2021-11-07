@@ -12,6 +12,7 @@
 
 {% if user.is_authenticated %}
     {{ user.email }}
+    <a href="{% url 'profile' %}">Mon profil</a>
     <a href="{% url 'logout' %}">Déconnexion</a>
 {% else %}
     <a href="{% url 'login' %}">Connexion</a>

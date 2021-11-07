@@ -1,5 +1,3 @@
-from datetime import datetime
-
 import stripe
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
@@ -7,7 +5,7 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 
-from accounts.models import Shopper
+from accounts.models import Shopper, ShippingAddress
 from shop import settings
 from store.models import Product, Cart, Order
 
@@ -58,6 +56,8 @@ def create_checkout_session(request):
             line_items=line_items,
             mode='payment',
             locale='fr',
+            customer=request.user.stripe_id,
+            shipping_address_collection={"allowed_countries": ["FR"]},
             success_url=request.build_absolute_uri(reverse('checkout-success')),
             cancel_url=request.build_absolute_uri(reverse('cart')),
     )
@@ -93,20 +93,46 @@ def stripe_webhook(request):
         return HttpResponse(status=400)
 
     if event['type'] == 'checkout.session.completed':
-        session = event['data']['object']
-        return complete_order(session=session)
+        data = event['data']['object']
+
+        try:
+            user = get_object_or_404(Shopper, email=data["customer_details"]["email"])
+        except KeyError:
+            return HttpResponse("Invalid user email", status=404)
+
+        complete_order(data=data, user=user)
+        save_shipping_address(data=data, user=user)
 
     return HttpResponse(status=200)
 
 
-def complete_order(session):
-    try:
-        user_email = session["customer_details"]["email"]
-    except KeyError:
-        return HttpResponse("Invalid user email", status=404)
-
-    user = get_object_or_404(Shopper, email=user_email)
+def complete_order(data, user):
+    user.stripe_id = data['customer']
+    user.save()
     user.cart.ordered = True
     user.cart.ordered_date = timezone.now()
     user.cart.save()
+    return HttpResponse(status=200)
+
+
+def save_shipping_address(data, user):
+    try:
+        address = data['shipping']['address']
+        name = data['shipping']['name']
+        city = address['city']
+        country = address['country']
+        line1 = address.get('line1', '')
+        line2 = address.get('line2', '')
+        zip_code = address['postal_code']
+    except KeyError:
+        return HttpResponse(status=400)
+
+    ShippingAddress.objects.get_or_create(user=user,
+                                          name=name,
+                                          city=city,
+                                          country=country.lower(),
+                                          address_1=line1,
+                                          address_2=line2 or '',
+                                          zip_code=zip_code)
+
     return HttpResponse(status=200)

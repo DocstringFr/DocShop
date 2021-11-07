@@ -3,7 +3,7 @@ from django.contrib import admin
 from django.urls import path
 
 from store.views import index, product_detail, add_to_cart, cart, delete_cart, create_checkout_session, stripe_webhook, checkout_success
-from accounts.views import signup, logout_user, login_user
+from accounts.views import signup, logout_user, login_user, profile
 
 from shop import settings
 
@@ -13,6 +13,7 @@ urlpatterns = [
     path('signup/', signup, name="signup"),
     path('login/', login_user, name="login"),
     path('logout/', logout_user, name="logout"),
+    path('profile/', profile, name="profile"),
     path('cart/', cart, name="cart"),
     path('stripe-webhook/', stripe_webhook, name="stripe-webhook"),
     path('cart/create-checkout-session/', create_checkout_session, name="create-checkout-session"),
