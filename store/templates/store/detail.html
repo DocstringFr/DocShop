@@ -10,7 +10,7 @@
 
 {% if user.is_authenticated %}
 <p>
-    <a href="{% url 'add-to-cart' product.slug %}">
+    <a href="{% url 'store:add-to-cart' product.slug %}">
         Ajouter dans le panier
     </a>
 </p>

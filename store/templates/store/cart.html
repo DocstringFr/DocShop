@@ -2,16 +2,25 @@
 
 {% block content %}
 
-{% for order in orders %}
-<h2>{{ order.product.name }}</h2>
-<img src="{{ order.product.thumbnail.url }}" alt="{{ order.product.name }}" style="max-width: 250px;">
-<p>{{ order.quantity }} dans le panier</p>
-{% endfor %}
+<form method="POST" action="{% url 'store:update-quantities' %}">
+    {% csrf_token %}
+    {{ forms.management_form }}
+    {% for form in forms %}
+    <div>
+        <h3>{{ form.instance.product.name }}</h3>
+        <img src="{{ form.instance.product.thumbnail.url }}" alt="Image du produit" style="max-width: 250px;">
+        <p>{{ form.instance.product.description }}</p>
+        {{ form.as_p }}
+    </div>
+    {% endfor %}
+    <button type="submit">Mettre à jour les quantités</button>
+</form>
 
-<form action="{% url 'create-checkout-session' %}" method="POST">
+
+<form action="{% url 'store:create-checkout-session' %}" method="POST">
     {% csrf_token %}
     <button type="submit">Acheter</button>
 </form>
-<a href="{% url 'delete-cart' %}">Supprimer le panier</a>
+<a href="{% url 'store:delete-cart' %}">Supprimer le panier</a>
 
 {% endblock %}

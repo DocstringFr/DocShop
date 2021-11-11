@@ -1,4 +1,5 @@
 import stripe
+from django.forms import modelformset_factory
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
@@ -6,6 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from accounts.models import Shopper, ShippingAddress
 from shop import settings
+from store.forms import OrderForm
 from store.models import Product, Cart, Order
 
 stripe.api_key = settings.STRIPE_API_KEY
@@ -36,13 +38,25 @@ def add_to_cart(request, slug):
         order.quantity += 1
         order.save()
 
-    return redirect(reverse("product", kwargs={"slug": slug}))
+    return redirect(reverse("store:product", kwargs={"slug": slug}))
 
 
 def cart(request):
-    cart = get_object_or_404(Cart, user=request.user)
+    orders = Order.objects.filter(user=request.user)
+    if orders.count() == 0:
+        return redirect("index")
+    OrderFormSet = modelformset_factory(Order, form=OrderForm, extra=0)
+    formset = OrderFormSet(queryset=orders)
+    return render(request, 'store/cart.html', context={"forms": formset})
 
-    return render(request, 'store/cart.html', context={"orders": cart.orders.all()})
+
+def update_quantities(request):
+    OrderFormSet = modelformset_factory(Order, form=OrderForm, extra=0)
+    formset = OrderFormSet(request.POST, queryset=Order.objects.filter(user=request.user))
+    if formset.is_valid():
+        formset.save()
+
+    return redirect('store:cart')
 
 
 def create_checkout_session(request):
@@ -50,16 +64,22 @@ def create_checkout_session(request):
     line_items = [{"price": order.product.stripe_id,
                    "quantity": order.quantity} for order in cart.orders.all()]
 
-    session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            line_items=line_items,
-            mode='payment',
-            locale='fr',
-            customer_email=request.user.email,
-            shipping_address_collection={"allowed_countries": ["FR", "US", "CA"]},
-            success_url=request.build_absolute_uri(reverse('checkout-success')),
-            cancel_url=request.build_absolute_uri(reverse('cart')),
-    )
+    checkout_data = {
+        "payment_method_types": ['card'],
+        "line_items": line_items,
+        "mode": 'payment',
+        "locale": 'fr',
+        "shipping_address_collection": {"allowed_countries": ["FR", "US", "CA"]},
+        "success_url": request.build_absolute_uri(reverse('store:checkout-success')),
+        "cancel_url": request.build_absolute_uri(reverse('store:cart')),
+    }
+
+    if request.user.stripe_id:
+        checkout_data["customer"] = request.user.stripe_id
+    else:
+        checkout_data["customer_email"] = request.user.email
+
+    session = stripe.checkout.Session.create(**checkout_data)
 
     return redirect(session.url)
 
