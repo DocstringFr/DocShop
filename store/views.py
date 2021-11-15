@@ -1,4 +1,5 @@
 import stripe
+from django.contrib.auth.decorators import login_required
 from django.forms import modelformset_factory
 from django.http import HttpResponse
 from django.shortcuts import render, get_object_or_404, redirect
@@ -8,14 +9,13 @@ from django.views.decorators.csrf import csrf_exempt
 from accounts.models import Shopper, ShippingAddress
 from shop import settings
 from store.forms import OrderForm
-from store.models import Product, Cart, Order
+from store.models import Product, Order
 
 stripe.api_key = settings.STRIPE_API_KEY
 
 
 def index(request):
     products = Product.objects.all()
-
     return render(request, 'store/index.html', context={"products": products})
 
 
@@ -26,21 +26,12 @@ def product_detail(request, slug):
 
 def add_to_cart(request, slug):
     user = request.user
-    product = get_object_or_404(Product, slug=slug)
-    cart, _ = Cart.objects.get_or_create(user=user)
-    order, created = Order.objects.get_or_create(user=user,
-                                                 product=product)
-
-    if created:
-        cart.orders.add(order)
-        cart.save()
-    else:
-        order.quantity += 1
-        order.save()
+    user.add_to_cart(slug=slug)
 
     return redirect(reverse("store:product", kwargs={"slug": slug}))
 
 
+@login_required
 def cart(request):
     orders = Order.objects.filter(user=request.user)
     if orders.count() == 0:

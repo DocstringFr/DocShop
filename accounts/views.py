@@ -25,10 +25,10 @@ def signup(request):
 def login_user(request):
     if request.method == "POST":
         # Connecter l'utilisateur
-        username = request.POST.get("username")
+        email = request.POST.get("email")
         password = request.POST.get("password")
 
-        user = authenticate(username=username, password=password)
+        user = authenticate(email=email, password=password)
         if user:
             login(request, user)
             return redirect('index')
@@ -46,7 +46,6 @@ def profile(request):
     if request.method == "POST":
         is_valid = authenticate(email=request.POST.get("email"),
                                 password=request.POST.get("password"))
-
         if is_valid:
             user = request.user
             user.first_name = request.POST.get("first_name")

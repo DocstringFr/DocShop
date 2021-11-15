@@ -1,4 +1,5 @@
 from django.db import models
+from django.templatetags.static import static
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.text import slugify
@@ -24,6 +25,10 @@ class Product(models.Model):
     def save(self, *args, **kwargs):
         self.slug = self.slug or slugify(self.name)
         super().save(*args, **kwargs)
+
+    def thumbnail_url(self):
+        return self.thumbnail.url if self.thumbnail else static("img/default.jpeg")
+
 
 class Order(models.Model):
     user = models.ForeignKey(AUTH_USER_MODEL, on_delete=models.CASCADE)

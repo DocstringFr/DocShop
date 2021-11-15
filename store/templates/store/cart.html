@@ -8,7 +8,7 @@
     {% for form in forms %}
     <div>
         <h3>{{ form.instance.product.name }}</h3>
-        <img src="{{ form.instance.product.thumbnail.url }}" alt="Image du produit" style="max-width: 250px;">
+        <img src="{{ form.instance.product.thumbnail_url }}" alt="Image du produit" style="max-width: 250px;">
         <p>{{ form.instance.product.description }}</p>
         {{ form.as_p }}
     </div>
